@@ -1,0 +1,28 @@
+FROM monroe/base
+
+MAINTAINER cise@simula.no
+
+# SDR
+RUN apt-get update && apt-get install sshpass && apt-get install nodejs -y
+
+# MONROE-Nettest
+ARG BUILD_DEPS="git autoconf automake make gcc pkg-config libjson-c-dev libssl-dev uuid-dev liblzma-dev"
+ARG PKG_DEPS="libuuid1 traceroute"
+ARG NETTEST_URL="https://github.com/lwimmer/rmbt-client"
+
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get install -y --force-yes --no-install-recommends --no-install-suggests \
+  $BUILD_DEPS $PKG_DEPS \
+  && mkdir -p /opt/monroe \
+  && cd /opt/monroe \
+  && git clone $NETTEST_URL nettest-client \
+  && cd nettest-client && ./autobuild.sh && make install && cd /opt/monroe && rm -rf nettest-client
+
+# allow -i option to traceroute for non-root users:
+RUN setcap cap_net_raw+ep /usr/bin/traceroute.db
+
+COPY sdr-nettest.py /opt/monroe/
+COPY files-nettest /opt/monroe/
+COPY files-sdr /opt/monroe/
+COPY files-sdr/nodejs_server /opt/monroe/nodejs_server
+
+ENTRYPOINT ["dumb-init", "--", "/usr/bin/python", "/opt/monroe/sdr-nettest.py"]

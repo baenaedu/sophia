@@ -1,0 +1,5 @@
+{
+"cnf_server_host": "bulk.se.monroe-system.eu",
+"cnf_server_port": 10080,
+"enabled_interfaces": ["eth0"]
+}
